@@ -1,0 +1,10 @@
+<library path="lib/libmujoco_screw_plugin">
+  <class
+    name="mujoco_screw_plugin/MujocoScrewPlugin"
+    type="mujoco_screw_plugin::MujocoScrewPlugin"
+    base_class_type="MujocoSim::MujocoPlugin">
+    <description>
+      Mujoco plugin that implements screws.
+    </description>
+  </class>
+</library>

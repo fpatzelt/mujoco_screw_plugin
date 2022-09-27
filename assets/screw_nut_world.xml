@@ -1,0 +1,110 @@
+<mujoco model="box_on_plane">
+  <compiler meshdir="meshes" discardvisual="false" angle="radian" />
+  <statistic extent="1.5" meansize=".05" />
+  <option timestep="0.001" jacobian="sparse" gravity="0 0 -9.81" />
+  <size nconmax="3000" njmax="4000" />
+  <visual>
+    <rgba haze="0.15 0.25 0.35 1" />
+    <quality shadowsize="4096" />
+    <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15" zfar="40" haze="0.3" />
+    <scale forcewidth="0.001" />
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="512" />
+    <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" mark="cross" markrgb=".8 .8 .8" />
+    <material name="matplane" reflectance="0.0" texture="texplane" texrepeat="1 1" texuniform="true" />
+    <mesh file="screw.stl" scale="0.002 0.002 0.002" />
+    <!-- <mesh file="screw000.stl" scale="0.002 0.002 0.002" />
+    <mesh file="screw001.stl" scale="0.002 0.002 0.002" /> -->
+    <mesh file="nut.stl" scale="0.002 0.002 0.002" />
+
+  </asset>
+
+  <custom></custom>
+
+
+  <worldbody>
+    <light directional="true" diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 5.0" dir="0 0 -1" castshadow="false" />
+    <light directional="true" diffuse=".6 .6 .6" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1" castshadow="false" />
+    <geom name="ground" type="plane" size="0 0 1" pos="0 0 0" quat="1 0 0 0" material="matplane" />
+    <!--body name="body_nut" pos="0 0.0 0.25">
+      <freejoint/>
+      <geom name="box" type="box" size="1.5 1.5 0.5" rgba="0.7 0.7 0.7 0.5" />
+
+    </body-->
+
+    <!-- userparams = parameters of the thread: diameter, pitch -->
+    <body name="nut" pos="0 0 0.2" euler="0 0 45" user="0.02 0.003">
+      <!--geom type="box" size="8.5 8.5 4" pos="0 0 4" group="3" rgba="0 0.3 0 0.2"/-->
+      <!--geom type="box" size="5 2 4" pos="0 -6.5 4" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="5 2 4" pos="0 6.5 4" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="5 2 4" pos="-5.62916512459885 3.250000000000002 4" euler="0 0 60" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="5 2 4" pos="-5.62916512459885 -3.250000000000002 4" euler="0 0 120" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="5 2 4" pos="5.62916512459885 -3.250000000000002 4" euler="0 0 240" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="5 2 4" pos="5.62916512459885 3.250000000000002 4" euler="0 0 300" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="cylinder" size="5 3.99" pos="0 0 4" group="3" rgba="0 0.3 0 0.2"/-->
+
+      <!-- 
+      <geom type="box" size="0.01 0.004 0.008" pos="0 -0.013 0.008" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="0.01 0.004 0.008" pos="0 0.013 0.008" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="0.01 0.004 0.008" pos="-0.011258330249197705 0.006499999999999996 0.008" euler="0 0 60" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="0.01 0.004 0.008" pos="-0.011258330249197705 -0.006499999999999996 0.008" euler="0 0 120" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="0.01 0.004 0.008" pos="0.011258330249197705 -0.006499999999999996 0.008" euler="0 0 240" group="3" rgba="0 0.3 0 0.2"/>
+      <geom type="box" size="0.01 0.004 0.008" pos="0.011258330249197705 0.006499999999999996 0.008" euler="0 0 300" group="3" rgba="0 0.3 0 0.2"/> -->
+      <geom name="nut_fill" type="cylinder" size="0.02 0.008" pos="0 0 0.008" group="3" rgba="0 0.3 0 0.2" />
+      <!-- <geom name="nut_fill" type="cylinder" size="0.01 0.00799" pos="0 0 0.008" group="3" rgba="0 0.3 0 0.2"/> -->
+      <!--geom type="box" size="2 4.5 2" pos="2.3 0 2" group="3" />
+
+      <geom type="box" size="2 4.5 2" pos="-2.3 0 2" group="3" />
+      <geom type="box" size="0.5 2 2" pos="0 2.3 2" group="3" />
+      <geom type="box" size="0.5 2 2" pos="0 -2.3 2" group="3" /-->
+
+
+      <!-- <geom name="nut_fill" type="mesh" mesh="nut" pos="0 0 0" /> -->
+      <geom type="mesh" mesh="nut" contype="0" conaffinity="0" pos="0 0 0" />
+
+      <site name="peg" pos="0 0 0.016" />
+
+    </body>
+
+    <!-- userparams = parameters of the thread: diameter, pitch, length, friction -->
+    <body name="screw" pos="0 0 0.276" user="0.02 0.003 0.1 0.01">
+      <joint name="s0" type="slide" axis="1 0 0" />
+      <joint name="s1" type="slide" axis="0 1 0" />
+      <joint name="s2" type="slide" axis="0 0 1" />
+      <joint name="h0" type="hinge" axis="1 0 0" />
+      <joint name="h1" type="hinge" axis="0 1 0" />
+      <joint name="h2" type="hinge" axis="0 0 1" />
+       <!-- frictionloss="0.01"/> -->
+
+      <!-- <geom name="screw000" type="mesh" mesh="screw000" group="3" />
+      <geom name="screw001" type="mesh" mesh="screw001" group="3" /> -->
+      <geom type="cylinder" size="0.016 0.01" pos="0 0 0.05" group="3" rgba="0 0.3 0 0.2" />
+      <geom name="screw_body" type="cylinder" size="0.010 0.05" pos="0 0 -0.01" group="3" rgba="0 0.3 0 0.2" />
+      <geom name="screw_vis" type="mesh" pos="0 0 0.04" mesh="screw" contype="0" conaffinity="0" />
+      <site name="screw_tip" pos="0 0 -0.06" />
+      <!-- major diameter, pitch in m (see ISO 68-1) and length of the thread -->
+
+    </body>
+    <!--body name="body_nut" pos="0 0 3" >
+      <freejoint/>
+      <geom name="nut" type="mesh" mesh="Mutter"/>
+    </body-->
+
+  </worldbody>
+
+  <equality>
+    <!-- For each screw joint (except rot around z-axis one constraint is required -->
+    <joint active="false" joint1="s0" />
+    <joint active="false" joint1="s1" />
+    <joint active="false" joint1="s2" />
+    <joint active="false" joint1="h0" />
+    <joint active="false" joint1="h1" />
+  </equality>
+
+  <actuator>
+    <!-- <velocity name="velocity_servo" joint="h2" kv="0.01" /> -->
+    <!-- <general name="screw_driver" joint="h2" gainprm="10" biastype="affine" biasprm="0 -1" dyntype="integrator" /> -->
+  </actuator>
+</mujoco>
