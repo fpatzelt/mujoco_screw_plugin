@@ -44,7 +44,7 @@
 #include <mujoco_ros/mujoco_sim.h>
 #include <mujoco_ros/plugin_utils.h>
 
-#include "mujoco.h"
+#include <mujoco/mujoco.h>
 
 namespace mujoco_screw_plugin {
 
