@@ -95,9 +95,10 @@ private:
 
 	std::vector<std::vector<int>> nut_joints;
 	std::vector<std::vector<double>> nut_joint_offsets;
-	std::vector<std::vector<int>> screw_joints;
-	std::vector<std::vector<double>> screw_joint_offsets;
-	std::vector<std::vector<int>> screw_joint_constraints;
+	std::vector<int> screw_joints;
+	std::vector<double> screw_joint_offsets;
+	std::vector<int> screw_joint_constraints;
+	std::vector<int> screw_body_constraints;
 
 	void initCollisionFunction();
 	void parseBodies();
