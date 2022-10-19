@@ -83,10 +83,7 @@ double constrainAngle(double x)
 
 } // namespace
 
-MujocoScrewPlugin::~MujocoScrewPlugin()
-{
-	delete this;
-}
+MujocoScrewPlugin::~MujocoScrewPlugin() {}
 
 bool MujocoScrewPlugin::load(mjModelPtr m, mjDataPtr d)
 {
