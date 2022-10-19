@@ -55,16 +55,16 @@ const std::string PREFIX = "screw_plugin::";
 class MujocoScrewPlugin : public MujocoSim::MujocoPlugin
 {
 public:
-	virtual ~MujocoScrewPlugin();
+	~MujocoScrewPlugin() = default;
 
 	// Overlead entry point
-	virtual bool load(mjModelPtr m, mjDataPtr d);
+	bool load(mjModelPtr m, mjDataPtr d) override;
 
-	virtual void passiveCallback(mjModelPtr model, mjDataPtr data);
-	// virtual void renderCallback(mjModelPtr model, mjDataPtr data, mjvScene *scene);
+	void passiveCallback(mjModelPtr model, mjDataPtr data) override;
+	// void renderCallback(mjModelPtr model, mjDataPtr data, mjvScene *scene) override;
 
 	// Called on reset
-	virtual void reset();
+	void reset() override;
 
 	int collision_cb(const mjModel *m, const mjData *d, mjContact *con, int g1, int g2, mjtNum margin);
 

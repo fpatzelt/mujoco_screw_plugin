@@ -83,8 +83,6 @@ double constrainAngle(double x)
 
 } // namespace
 
-MujocoScrewPlugin::~MujocoScrewPlugin() {}
-
 bool MujocoScrewPlugin::load(mjModelPtr m, mjDataPtr d)
 {
 	ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Loading mujoco_screw_plugin ...");
