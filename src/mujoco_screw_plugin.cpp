@@ -341,8 +341,22 @@ bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int ni
 			    -m->body_user[m->nuser_body * screw_ids[sidx] + 1] / 2. / M_PI * (current_angle - lock_angle[nidx][sidx]) +
 			    m->site_pos[3 * id_s + 2] - m->site_pos[3 * id_n + 2];
 			if (nut_joints[nidx].size() > 0) {
-				m->eq_data[screw_joint_constraints[sidx] * mjNEQDATA] =
-				    d->qpos[m->jnt_qposadr[screw_joints[sidx]]] - d->qpos[m->jnt_qposadr[nut_joints[nidx][0]]];
+				double max_rotations =
+				    m->body_user[m->nuser_body * screw_ids[sidx] + 2] / m->body_user[m->nuser_body * screw_ids[sidx] + 1];
+				double rot_threshold     = max_rotations - 1;
+				double current_rotations = (lock_angle[nidx][sidx] - current_angle)  / (2 * M_PI);
+				// ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Current rots: " << current_rotations << " max rots: " << max_rotations);
+				double scale =
+				    std::max(0.0, std::min(1.0, (current_rotations - rot_threshold) / (max_rotations - rot_threshold)));
+				if (current_rotations < max_rotations) {
+					m->eq_data[screw_joint_constraints[sidx] * mjNEQDATA] =
+					    d->qpos[m->jnt_qposadr[screw_joints[sidx]]] - d->qpos[m->jnt_qposadr[nut_joints[nidx][0]]];
+				}
+				m->eq_solimp[screw_joint_constraints[sidx] *mjNREF] = 0.04 - 0.0399 * scale;
+				m->eq_solimp[screw_joint_constraints[sidx] *mjNREF+1] = 1.0 + 2.0 * scale;
+				m->eq_solref[screw_joint_constraints[sidx] * mjNIMP] = 0.99 + 0.0099 * scale;
+				m->eq_solref[screw_joint_constraints[sidx] * mjNIMP + 1] = 0.99 + 0.0099 * scale;
+				m->eq_solref[screw_joint_constraints[sidx] * mjNIMP + 2] = 0.01 - 0.0099 * scale;
 			}
 		}
 		return false;
@@ -420,7 +434,6 @@ bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int ni
 
 								// activate friction
 								if (nut_joints[nidx].size() > 0) {
-									// TODO: check if screw and lock reach the end of the thread
 									int jc                     = screw_joint_constraints[sidx];
 									m->eq_data[jc * mjNEQDATA] = d->qpos[m->jnt_qposadr[screw_joints[sidx]]] -
 									                             d->qpos[m->jnt_qposadr[nut_joints[nidx][0]]];
