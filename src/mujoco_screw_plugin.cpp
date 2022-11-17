@@ -85,7 +85,7 @@ double constrainAngle(double x)
 
 bool MujocoScrewPlugin::load(mjModelPtr m, mjDataPtr d)
 {
-	ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Loading mujoco_screw_plugin ...");
+	ROS_INFO_NAMED("mujoco_screw_plugin", "Loading mujoco_screw_plugin ...");
 	d_                    = d;
 	m_                    = m;
 	instance_map[d.get()] = this;
@@ -93,8 +93,17 @@ bool MujocoScrewPlugin::load(mjModelPtr m, mjDataPtr d)
 		initCollisionFunction();
 	}
 	parseBodies();
+	parseROSParam();
+	ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Insert screw contacts: " << insert_contacts);
 	ROS_INFO_NAMED("mujoco_screw_plugin", "Loaded mujoco_screw_plugin");
 	return true;
+}
+
+void MujocoScrewPlugin::parseROSParam()
+{
+	if (rosparam_config_.hasMember("insert_contacts")) {
+		insert_contacts = static_cast<bool>(rosparam_config_["insert_contacts"]);
+	}
 }
 
 void MujocoScrewPlugin::parseBodies()
@@ -302,7 +311,7 @@ void MujocoScrewPlugin::initCollisionFunction()
 // return whether collisions should be computed between the bodies
 bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int nidx, int sidx)
 {
-	if (nidx < 0 || sidx < 0) {	
+	if (nidx < 0 || sidx < 0) {
 		return true;
 	}
 	if (screw_locks[sidx] == nidx && nut_locks[nidx] == sidx) {
@@ -356,8 +365,8 @@ bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int ni
 			if (mju_dist3(p_n, p_s) < 0.002) {
 				// sites of screw and nut are close
 				mjtNum *R_n = d->site_xmat + 9 * id_n;
-				mjtNum *R_s = d->site_xmat + 9 * id_s;				
-				mjtNum *R0 = new mjtNum[9];
+				mjtNum *R_s = d->site_xmat + 9 * id_s;
+				mjtNum *R0  = new mjtNum[9];
 				mju_mulMatTMat(R0, R_n, R_s, 3, 3, 3);
 				mjtNum *eulers = rot2euler(R0);
 
@@ -407,7 +416,7 @@ bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int ni
 									std::cout << m_->eq_data[bc * mjNEQDATA + i] << " ";
 								}
 								std::cout << std::endl;
-								m->eq_active[bc] = 1;								
+								m->eq_active[bc] = 1;
 
 								// activate friction
 								if (nut_joints[nidx].size() > 0) {
@@ -455,12 +464,18 @@ int MujocoScrewPlugin::collision_cb(const mjModel *m, const mjData *d, mjContact
 		sidx = geom2screw[g1];
 	}
 	bool col = handleScrewing(m, d, nidx, sidx);
+	int t1   = m->geom_type[g1];
+	int t2   = m->geom_type[g2];
 	if (col) {
-		int t1 = m->geom_type[g1];
-		int t2 = m->geom_type[g2];
-
 		return defaultCollisionFunctions[t1][t2](m, d, con, g1, g2, margin);
 	} else {
+		if (insert_contacts) {
+			int n = defaultCollisionFunctions[t1][t2](m, d, con, g1, g2, margin);
+			for (int i = 0; i < n; ++i) {
+				con[i].dist = mjMAXVAL;
+			}
+			return n;
+		}
 		return 0;
 	}
 }

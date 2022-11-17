@@ -74,6 +74,8 @@ protected:
 	mjDataPtr d_;
 
 private:
+	bool insert_contacts = false;
+
 	double **lock_angle;
 	double **last_angle;
 	double **last_contact_time;
@@ -102,6 +104,7 @@ private:
 
 	void initCollisionFunction();
 	void parseBodies();
+	void parseROSParam();
 	bool handleScrewing(const mjModel *m, const mjData *d, int nidx, int sidx);
 };
 
