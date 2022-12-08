@@ -61,7 +61,6 @@ public:
 	bool load(mjModelPtr m, mjDataPtr d) override;
 
 	void passiveCallback(mjModelPtr model, mjDataPtr data) override;
-	// void renderCallback(mjModelPtr model, mjDataPtr data, mjvScene *scene) override;
 
 	// Called on reset
 	void reset() override;
@@ -76,9 +75,10 @@ protected:
 private:
 	bool insert_contacts = false;
 
-	double **lock_angle;
+	double **acc_angle;
 	double **last_angle;
 	double **last_contact_time;
+	double **lock_scales;
 
 	int n_nuts   = 0;
 	int n_screws = 0;
@@ -95,11 +95,8 @@ private:
 	std::vector<int> screw_sites;
 	std::vector<int> nut_sites;
 
-	std::vector<std::vector<int>> nut_joints;
-	std::vector<std::vector<double>> nut_joint_offsets;
-	std::vector<int> screw_joints;
+	std::vector<double> nut_joint_offsets;
 	std::vector<double> screw_joint_offsets;
-	std::vector<int> screw_joint_constraints;
 	std::vector<int> screw_body_constraints;
 
 	void initCollisionFunction();

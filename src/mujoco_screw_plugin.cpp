@@ -139,49 +139,27 @@ void MujocoScrewPlugin::parseBodies()
 					continue;
 				}
 
-				int child_id = 0;
-				// Find child body
-				while (child_id < m_->nbody && m_->body_parentid[child_id] != i) {
-					++child_id;
-				}
-				if (child_id == m_->nbody || m_->body_jntnum[child_id] != 1) {
-					ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "No child");
-					continue;
-				}
-				int jnt_id = m_->body_jntadr[child_id];
-
-				if (m_->jnt_type[jnt_id] != mjJNT_HINGE || m_->jnt_axis[3 * jnt_id + 2] != 1) {
-					ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "child joint wrong");
-					continue;
-				}
-
-				int body_constraint  = -1;
-				int joint_constraint = -1;
+				int body_constraint = -1;
 
 				for (int c_id = 0; c_id < m_->neq; ++c_id) {
-					if (m_->eq_type[c_id] == mjEQ_JOINT && m_->eq_obj1id[c_id] == jnt_id) {
-						joint_constraint = c_id;
-					}
 					if (m_->eq_type[c_id] == mjEQ_WELD && m_->eq_obj1id[c_id] == i) {
 						body_constraint = c_id;
 					}
 				}
 
-				if (joint_constraint < 0 || body_constraint < 0) {
+				if (body_constraint < 0) {
 					ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Constraint missing");
 					continue;
 				}
 
 				ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Found screw: " << name);
-				for (int k = 0; k < m_->body_geomnum[child_id]; ++k) {
-					int geom_id         = m_->body_geomadr[child_id] + k;
+				for (int k = 0; k < m_->body_geomnum[i]; ++k) {
+					int geom_id         = m_->body_geomadr[i] + k;
 					geom2screw[geom_id] = screw_ids.size();
 				}
 				screw_ids.push_back(i);
 				screw_locks.push_back(-1);
 				screw_sites.push_back(site_id);
-				screw_joints.push_back(jnt_id);
-				screw_joint_constraints.push_back(joint_constraint);
 				screw_body_constraints.push_back(body_constraint);
 				mjtNum *R = new mjtNum[9];
 				mju_quat2Mat(R, m_->body_quat + 4 * i);
@@ -203,81 +181,24 @@ void MujocoScrewPlugin::parseBodies()
 				}
 
 				if (m_->body_dofnum[i] > 0) {
-					int child_id = 0;
-					// Find child body
-					while (child_id < m_->nbody && m_->body_parentid[child_id] != i) {
-						++child_id;
-					}
-					if (child_id == m_->nbody || m_->body_jntnum[child_id] != 1) {
-						ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "No child");
-						continue;
-					}
-					int jnt_id = m_->body_jntadr[child_id];
-
-					if (m_->jnt_type[jnt_id] != mjJNT_HINGE || m_->jnt_axis[3 * jnt_id + 2] != 1) {
-						ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "child joint wrong");
-						continue;
-					}
-
 					ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Found nut: " << name);
-					for (int k = 0; k < m_->body_geomnum[child_id]; ++k) {
-						int geom_id       = m_->body_geomadr[child_id] + k;
+					for (int k = 0; k < m_->body_geomnum[i]; ++k) {
+						int geom_id       = m_->body_geomadr[i] + k;
 						geom2nut[geom_id] = nut_ids.size();
 					}
 					nut_ids.push_back(i);
 					nut_locks.push_back(-1);
 					nut_sites.push_back(site_id);
-					nut_joints.push_back({ jnt_id });
+					// nut_joints.push_back({ jnt_id });
 
 					mjtNum *R = new mjtNum[9];
 					mju_quat2Mat(R, m_->body_quat + 4 * i);
 					mjtNum *euler = rot2euler(R);
-					nut_joint_offsets.push_back({ euler[2] });
+					nut_joint_offsets.push_back(euler[2]);
 					++n_nuts;
 				} else {
-					std::vector<int> joints;
-
-					for (auto type : { mjJNT_SLIDE, mjJNT_HINGE }) {
-						for (int a = 0; a < 3; ++a) {
-							for (int k = 0; k < m_->body_jntnum[i]; ++k) {
-								int jnt_id = m_->body_jntadr[i] + k;
-								if (m_->jnt_axis[3 * jnt_id + a] == 1.0 && m_->jnt_type[jnt_id] == type) {
-									joints.push_back(jnt_id);
-								}
-							}
-						}
-					}
-
-					if (site_id >= 0 && (joints.size() == 0 || joints.size() == 6)) {
-						ROS_INFO_STREAM_NAMED("mujoco_screw_plugin",
-						                      "Found nut: " << name << " Num joints: " << joints.size());
-						std::vector<double> joint_offsets;
-						for (int k = 0; k < 3; ++k) {
-							joint_offsets.push_back(m_->body_pos[3 * i + k]);
-						}
-						mjtNum *R = new mjtNum[9];
-						mju_quat2Mat(R, m_->body_quat + 4 * i);
-						mjtNum *euler = rot2euler(R);
-						for (int k = 0; k < 3; ++k) {
-							joint_offsets.push_back(euler[k]);
-						}
-						for (int k = 0; k < m_->body_geomnum[i]; ++k) {
-							int geom_id       = m_->body_geomadr[i] + k;
-							geom2nut[geom_id] = nut_ids.size();
-						}
-
-						nut_ids.push_back(i);
-						nut_locks.push_back(-1);
-						nut_sites.push_back(site_id);
-						nut_joints.push_back(joints);
-						nut_joint_offsets.push_back(joint_offsets);
-						++n_nuts;
-
-					} else {
-						ROS_WARN_STREAM_NAMED(
-						    "mujoco_screw_plugin",
-						    "Found nut without defined peg site or with a wrong number of joints: " << name);
-					}
+					ROS_WARN_STREAM_NAMED("mujoco_screw_plugin",
+					                      "Found nut without defined peg site or with a wrong number of joints: " << name);
 				}
 			}
 		}
@@ -285,15 +206,18 @@ void MujocoScrewPlugin::parseBodies()
 
 	// init arrays between screws and nuts
 	last_angle        = new double *[n_nuts];
-	lock_angle        = new double *[n_nuts];
+	acc_angle         = new double *[n_nuts];
 	last_contact_time = new double *[n_nuts];
+	lock_scales       = new double *[n_nuts];
 	for (int i = 0; i < n_nuts; ++i) {
 		last_angle[i]        = new double[n_screws];
-		lock_angle[i]        = new double[n_screws];
+		acc_angle[i]         = new double[n_screws];
 		last_contact_time[i] = new double[n_screws];
+		lock_scales[i]       = new double[n_screws];
 		for (int j = 0; j < n_screws; ++j) {
 			last_angle[i][j]        = 0;
 			last_contact_time[i][j] = -1;
+			lock_scales[i][j]       = 0;
 		}
 	}
 }
@@ -316,20 +240,20 @@ bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int ni
 	}
 	if (screw_locks[sidx] == nidx && nut_locks[nidx] == sidx) {
 		// locked
-		double current_angle;
-		if (nut_joints[nidx].size() == 0) {
-			current_angle =
-			    -nut_joint_offsets[nidx][5] + screw_joint_offsets[sidx] + d->qpos[m->jnt_qposadr[screw_joints[sidx]]];
-		} else {
-			current_angle = -d->qpos[m->jnt_qposadr[nut_joints[nidx][0]]] - nut_joint_offsets[nidx][0] +
-			                screw_joint_offsets[sidx] + d->qpos[m->jnt_qposadr[screw_joints[sidx]]];
-		}
-		if (current_angle > lock_angle[nidx][sidx]) {
+		mjtNum *RB   = new mjtNum[9];
+		mjtNum *R_nB = d->xmat + 9 * nut_ids[nidx];
+		mjtNum *R_sB = d->xmat + 9 * screw_ids[sidx];
+		mju_mulMatTMat(RB, R_nB, R_sB, 3, 3, 3);
+		mjtNum *eulersB      = rot2euler(RB);
+		double current_angle = eulersB[2];
+		// update accumulated relative angle
+		acc_angle[nidx][sidx] += constrainAngle(current_angle - last_angle[nidx][sidx]);
+
+		if (acc_angle[nidx][sidx] < 0) {
 			// unlock condition met
 			screw_locks[sidx] = -1;
 			nut_locks[nidx]   = -1;
 			ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "UNLOCK");
-			m_->eq_active[screw_joint_constraints[sidx]]             = 0;
 			m_->eq_active[screw_body_constraints[sidx]]              = 0;
 			m->dof_frictionloss[m->body_dofadr[screw_ids[sidx]] + 5] = 0;
 			m->jnt_limited[m->body_jntadr[screw_ids[sidx]] + 5]      = 0;
@@ -338,27 +262,24 @@ bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int ni
 			int id_s = screw_sites[sidx];
 			int id_n = nut_sites[nidx];
 			m->eq_data[screw_body_constraints[sidx] * mjNEQDATA + 5] =
-			    -m->body_user[m->nuser_body * screw_ids[sidx] + 1] / 2. / M_PI * (current_angle - lock_angle[nidx][sidx]) +
+			    m->body_user[m->nuser_body * screw_ids[sidx] + 1] / 2. / M_PI * acc_angle[nidx][sidx] +
 			    m->site_pos[3 * id_s + 2] - m->site_pos[3 * id_n + 2];
-			if (nut_joints[nidx].size() > 0) {
-				double max_rotations =
-				    m->body_user[m->nuser_body * screw_ids[sidx] + 2] / m->body_user[m->nuser_body * screw_ids[sidx] + 1];
-				double rot_threshold     = max_rotations - 1;
-				double current_rotations = (lock_angle[nidx][sidx] - current_angle)  / (2 * M_PI);
-				// ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "Current rots: " << current_rotations << " max rots: " << max_rotations);
-				double scale =
-				    std::max(0.0, std::min(1.0, (current_rotations - rot_threshold) / (max_rotations - rot_threshold)));
-				if (current_rotations < max_rotations) {
-					m->eq_data[screw_joint_constraints[sidx] * mjNEQDATA] =
-					    d->qpos[m->jnt_qposadr[screw_joints[sidx]]] - d->qpos[m->jnt_qposadr[nut_joints[nidx][0]]];
-				}
-				m->eq_solimp[screw_joint_constraints[sidx] *mjNREF] = 0.04 - 0.0399 * scale;
-				m->eq_solimp[screw_joint_constraints[sidx] *mjNREF+1] = 1.0 + 2.0 * scale;
-				m->eq_solref[screw_joint_constraints[sidx] * mjNIMP] = 0.99 + 0.0099 * scale;
-				m->eq_solref[screw_joint_constraints[sidx] * mjNIMP + 1] = 0.99 + 0.0099 * scale;
-				m->eq_solref[screw_joint_constraints[sidx] * mjNIMP + 2] = 0.01 - 0.0099 * scale;
+			double max_rotations =
+			    m->body_user[m->nuser_body * screw_ids[sidx] + 2] / m->body_user[m->nuser_body * screw_ids[sidx] + 1];
+			double rot_threshold     = max_rotations - 1;
+			double current_rotations = acc_angle[nidx][sidx] / (2 * M_PI);
+			lock_scales[nidx][sidx] =
+			    std::max(0.0, std::min(1.0, (current_rotations - rot_threshold) / (max_rotations - rot_threshold)));
+			// torquescale is not touched
+			// m->eq_data[screw_body_constraints[sidx] * mjNEQDATA + 10] = 1 + 100 * lock_scales[nidx][sidx];
+			if (current_rotations < max_rotations) {
+				// eq+data[... + 6] is begin of quaternion
+				const mjtNum zaxis[3] = { 0., 0., 1. };
+				mju_axisAngle2Quat(m_->eq_data + screw_body_constraints[sidx] * mjNEQDATA + 6, zaxis, current_angle);
 			}
 		}
+		last_contact_time[nidx][sidx] = d->time;
+		last_angle[nidx][sidx]        = current_angle;
 		return false;
 	} else {
 		if (screw_locks[sidx] >= 0 || nut_locks[nidx] >= 0) {
@@ -393,68 +314,33 @@ bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int ni
 					// screw and nut are aligned
 					if (d->time - last_contact_time[nidx][sidx] < 2 * m->opt.timestep) {
 						// screw and nut are aligned for multiple consecutive timesteps
-						double current_angle;
-						if (nut_joints[nidx].size() == 0) {
-							current_angle = -nut_joint_offsets[nidx][5] + screw_joint_offsets[sidx] +
-							                d->qpos[m->jnt_qposadr[screw_joints[sidx]]];
-						} else {
-							current_angle = -d->qpos[m->jnt_qposadr[nut_joints[nidx][0]]] - nut_joint_offsets[nidx][0] +
-							                screw_joint_offsets[sidx] + d->qpos[m->jnt_qposadr[screw_joints[sidx]]];
-						}
-						if (last_angle[nidx][sidx] > current_angle) {
-							// screw turns in the correct direction
-							double fm = std::fmod(current_angle, 2 * M_PI);
-							double la;
-							la = current_angle > 0 ? current_angle - fm + 2. * M_PI : current_angle - fm;
-							if (la < last_angle[nidx][sidx]) {
-								// screw went past the "locking angle": lock screw and nut
-								ROS_INFO_STREAM_NAMED("mujoco_screw_plugin",
-								                      "LOCK: c: " << current_angle << " last: " << last_angle[nidx][sidx]
-								                                  << " lock: " << la << " z-angle: " << eulersB[2]);
+						mjtNum nut_angle     = d->qpos[3 + m->jnt_qposadr[m->body_jntadr[nut_ids[nidx]]]];
+						mjtNum screw_angle   = d->qpos[3 + m->jnt_qposadr[m->body_jntadr[screw_ids[sidx]]]];
+						double current_angle = eulersB[2];
+						if (last_angle[nidx][sidx] < 0 && current_angle > 0 &&
+						    current_angle - last_angle[nidx][sidx] < M_PI) {
+							// screw went past the "locking angle": lock screw and nut
+							ROS_INFO_STREAM_NAMED("mujoco_screw_plugin", "LOCK: c: " << current_angle
+							                                                         << " last: " << last_angle[nidx][sidx]
+							                                                         << " z-angle: " << eulersB[2]);
 
-								screw_locks[sidx]      = nidx;
-								nut_locks[nidx]        = sidx;
-								lock_angle[nidx][sidx] = la;
+							screw_locks[sidx]     = nidx;
+							nut_locks[nidx]       = sidx;
+							acc_angle[nidx][sidx] = current_angle;
 
-								// activate constraints
-								int bc           = screw_body_constraints[sidx];
-								m->eq_obj2id[bc] = nut_ids[nidx];
-								for (int i = 0; i < 3; ++i) {
-									m->eq_data[bc * mjNEQDATA + i + 3] = m->site_pos[3 * id_s + i] - m->site_pos[3 * id_n + i];
-									m->eq_data[bc * mjNEQDATA + i]     = 0;
-								}
-								const mjtNum zaxis[3] = { 0., 0., 1. };
-								mju_axisAngle2Quat(m_->eq_data + bc * mjNEQDATA + 6, zaxis, eulersB[2]);
-								m_->eq_data[bc * mjNEQDATA + 10] = 1;
-								for (int i = 0; i < mjNEQDATA; ++i) {
-									std::cout << m_->eq_data[bc * mjNEQDATA + i] << " ";
-								}
-								std::cout << std::endl;
-								m->eq_active[bc] = 1;
-
-								// activate friction
-								if (nut_joints[nidx].size() > 0) {
-									int jc                     = screw_joint_constraints[sidx];
-									m->eq_data[jc * mjNEQDATA] = d->qpos[m->jnt_qposadr[screw_joints[sidx]]] -
-									                             d->qpos[m->jnt_qposadr[nut_joints[nidx][0]]];
-									m->eq_data[jc * mjNEQDATA + 1] = 1;
-									m->eq_obj2id[jc]               = nut_joints[nidx][0];
-									m->eq_active[jc]               = 1;
-								} else {
-									m->dof_frictionloss[m->body_dofadr[screw_ids[sidx]] + 5] =
-									    m->body_user[m->nuser_body * screw_ids[sidx] + 3];
-
-									m->jnt_range[(m->body_jntadr[screw_ids[sidx]] + 5) * 2] =
-									    la - (m->body_user[m->nuser_body * screw_ids[sidx] + 2] /
-									          m->body_user[m->nuser_body * screw_ids[sidx] + 1]) *
-									             2 * M_PI;
-									m->jnt_range[(m->body_jntadr[screw_ids[sidx]] + 5) * 2 + 1] =
-									    la + 2 * M_PI; // this can never be reached
-									m->jnt_limited[m->body_jntadr[screw_ids[sidx]] + 5] = 1;
-								}
+							// activate constraints
+							int bc           = screw_body_constraints[sidx];
+							m->eq_obj2id[bc] = nut_ids[nidx];
+							for (int i = 0; i < 3; ++i) {
+								m->eq_data[bc * mjNEQDATA + i + 3] = m->site_pos[3 * id_s + i] - m->site_pos[3 * id_n + i];
+								m->eq_data[bc * mjNEQDATA + i]     = 0;
 							}
+							const mjtNum zaxis[3] = { 0., 0., 1. };
+							mju_axisAngle2Quat(m_->eq_data + bc * mjNEQDATA + 6, zaxis, current_angle);
+							// do not touch torquescale
+							// m_->eq_data[bc * mjNEQDATA + 10] = 1;
+							m->eq_active[bc] = 1;
 						}
-
 						last_angle[nidx][sidx] = current_angle;
 					}
 				}
@@ -493,7 +379,134 @@ int MujocoScrewPlugin::collision_cb(const mjModel *m, const mjData *d, mjContact
 	}
 }
 
-void MujocoScrewPlugin::passiveCallback(mjModelPtr m, mjDataPtr d) {}
+// compute impedance and derivative for one constraint
+static void getimpedance(const mjtNum *solimp, mjtNum pos, mjtNum margin, mjtNum *imp, mjtNum *impP)
+{
+	// flat function
+	if (solimp[0] == solimp[1] || solimp[2] <= mjMINVAL) {
+		*imp  = 0.5 * (solimp[0] + solimp[1]);
+		*impP = 0;
+		return;
+	}
+
+	// x = abs((pos-margin) / width)
+	mjtNum x   = (pos - margin) / solimp[2];
+	mjtNum sgn = 1;
+	if (x < 0) {
+		x   = -x;
+		sgn = -1;
+	}
+
+	// fully saturated
+	if (x >= 1 || x <= 0) {
+		*imp  = (x >= 1 ? solimp[1] : solimp[0]);
+		*impP = 0;
+		return;
+	}
+
+	// linear
+	mjtNum y, yP;
+	if (solimp[4] == 1) {
+		y  = x;
+		yP = 1;
+	}
+
+	// y(x) = a*x^p if x<=midpoint
+	else if (x <= solimp[3]) {
+		mjtNum a = 1 / mju_pow(solimp[3], solimp[4] - 1);
+		y        = a * mju_pow(x, solimp[4]);
+		yP       = solimp[4] * a * mju_pow(x, solimp[4] - 1);
+	}
+
+	// y(x) = 1-b*(1-x)^p is x>midpoint
+	else {
+		mjtNum b = 1 / mju_pow(1 - solimp[3], solimp[4] - 1);
+		y        = 1 - b * mju_pow(1 - x, solimp[4]);
+		yP       = solimp[4] * b * mju_pow(1 - x, solimp[4] - 1);
+	}
+
+	// scale
+	*imp  = solimp[0] + y * (solimp[1] - solimp[0]);
+	*impP = yP * sgn * (solimp[1] - solimp[0]) / solimp[2];
+}
+
+void MujocoScrewPlugin::passiveCallback(mjModelPtr m, mjDataPtr d)
+{
+	int dim, nefc = d->nefc;
+	mjtNum *R = d->efc_R, *KBIP = d->efc_KBIP;
+	mjtNum pos, imp, impP, Rpy;
+	mjtNum solref[mjNREF] = { 0.2, 1 };
+	mjtNum solimp[mjNIMP] = { 0.8, 0.95, 1, 0.5, 2 };
+
+	// look for locked screws/nuts
+	for (int sidx = 0; sidx < n_screws; ++sidx) {
+		for (int nidx = 0; nidx < n_nuts; ++nidx) {
+			if (nut_locks[nidx] == sidx && screw_locks[sidx] == nidx) {
+				int id = screw_body_constraints[sidx];
+				int i  = 0;
+				// find constraints for nut/screw pair
+				while (i < d->nefc && !(d->efc_type[i] == mjCNSTR_EQUALITY && d->efc_id[i] == id)) {
+					++i;
+				}
+				if (i < d->nefc) {
+					// scale works similar to torquescale but just around z-axis and determines how hard it is to turn the
+					// screw
+					double scale = 0.1 + 10 * lock_scales[nidx][sidx];
+					int j        = i + 5;
+					if (!mj_isSparse(m.get())) {
+						mju_scl(d->efc_J + j * m->nv, d->efc_J + j * m->nv, scale, m->nv);
+					} else {
+						mju_scl(d->efc_J + d->efc_J_rowadr[j], d->efc_J + d->efc_J_rowadr[j], scale, m->nv);
+					}
+
+					mjtNum efc_pos[6];
+
+					mju_copy(efc_pos, d->efc_pos + i, 6);
+
+					// multiply z-orientation by scale
+					efc_pos[5] *= scale;
+					dim = 6;
+					pos = mju_norm(efc_pos, 6);
+
+					// get imp and impP
+					getimpedance(solimp, pos, d->efc_margin[i], &imp, &impP);
+
+					R[j] = mju_max(mjMINVAL, (1 - imp) * d->efc_diagApprox[j] / imp);
+
+					// friction: K = 0
+					int tp = d->efc_type[j];
+
+					// standard: K = 1 / (dmax^2 * timeconst^2 * dampratio^2)
+					if (solref[0] > 0)
+						KBIP[4 * j] =
+						    1 / mju_max(mjMINVAL, solimp[1] * solimp[1] * solref[0] * solref[0] * solref[1] * solref[1]);
+
+					// direct: K = -solref[0] / dmax^2
+					else {
+						KBIP[4 * j] = -solref[0] / mju_max(mjMINVAL, solimp[1] * solimp[1]);
+					}
+
+					// standard: B = 2 / (dmax*timeconst)
+					if (solref[1] > 0) {
+						KBIP[4 * j + 1] = 2 / mju_max(mjMINVAL, solimp[1] * solref[0]);
+					}
+
+					// direct: B = -solref[1] / dmax
+					else {
+						KBIP[4 * j + 1] = -solref[1] / mju_max(mjMINVAL, solimp[1]);
+					}
+
+					// I = imp, P = imp'
+					KBIP[4 * j + 2]      = imp;
+					KBIP[4 * j + 3]      = impP;
+					d->efc_D[j]          = 1 / R[j];
+					d->efc_diagApprox[j] = R[j] * KBIP[4 * j + 2] / (1 - KBIP[4 * j + 2]);
+					mj_projectConstraint(m.get(), d.get());
+				}
+			}
+		}
+	}
+}
 
 void MujocoScrewPlugin::reset()
 {
@@ -505,9 +518,8 @@ void MujocoScrewPlugin::reset()
 		nut_locks[i] = -1;
 	}
 	for (int i = 0; i < n_screws; ++i) {
-		screw_locks[i]                            = -1;
-		m_->eq_active[screw_joint_constraints[i]] = 0;
-		m_->eq_active[screw_body_constraints[i]]  = 0;
+		screw_locks[i] = -1;
+		m_->eq_active[screw_body_constraints[i]] = 0;
 	}
 }
 
