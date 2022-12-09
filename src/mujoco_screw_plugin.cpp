@@ -451,7 +451,7 @@ void MujocoScrewPlugin::passiveCallback(mjModelPtr m, mjDataPtr d)
 				if (i < d->nefc) {
 					// scale works similar to torquescale but just around z-axis and determines how hard it is to turn the
 					// screw
-					double scale = 0.1 + 10 * lock_scales[nidx][sidx];
+					double scale = m->body_user[m->nuser_body * screw_ids[sidx] + 3] + 10 * lock_scales[nidx][sidx];
 					int j        = i + 5;
 					if (!mj_isSparse(m.get())) {
 						mju_scl(d->efc_J + j * m->nv, d->efc_J + j * m->nv, scale, m->nv);
