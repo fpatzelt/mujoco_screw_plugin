@@ -232,6 +232,20 @@ void MujocoScrewPlugin::initCollisionFunction()
 	}
 }
 
+int MujocoScrewPlugin::getScrewingStatus(int nidx, int sidx) {
+	if (nidx >= n_nuts || sidx >= n_screws) {
+		return 0;
+	}
+	if (screw_locks[sidx] == nidx && nut_locks[nidx] == sidx) {
+		if (lock_scales[nidx][sidx] > 0) {
+			return 2;
+		} else {
+			return 1;
+		}
+	} 
+	return 0;
+}
+
 // return whether collisions should be computed between the bodies
 bool MujocoScrewPlugin::handleScrewing(const mjModel *m, const mjData *d, int nidx, int sidx)
 {

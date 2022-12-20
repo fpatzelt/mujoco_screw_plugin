@@ -67,6 +67,9 @@ public:
 
 	int collision_cb(const mjModel *m, const mjData *d, mjContact *con, int g1, int g2, mjtNum margin);
 
+	// 0: not screwed, 1: locked, 2: tight
+	int getScrewingStatus(int n, int s);
+
 protected:
 	// Mujoco model and data pointers
 	mjModelPtr m_;
