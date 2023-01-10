@@ -61,12 +61,14 @@ public:
 	bool load(mjModelPtr m, mjDataPtr d) override;
 
 	void passiveCallback(mjModelPtr model, mjDataPtr data) override;
-	// void renderCallback(mjModelPtr model, mjDataPtr data, mjvScene *scene) override;
 
 	// Called on reset
 	void reset() override;
 
 	int collision_cb(const mjModel *m, const mjData *d, mjContact *con, int g1, int g2, mjtNum margin);
+
+	// 0: not screwed, 1: locked, 2: tight
+	int getScrewingStatus(int n, int s);
 
 protected:
 	// Mujoco model and data pointers
@@ -74,9 +76,12 @@ protected:
 	mjDataPtr d_;
 
 private:
-	double **lock_angle;
+	bool insert_contacts = false;
+
+	double **acc_angle;
 	double **last_angle;
 	double **last_contact_time;
+	double **lock_scales;
 
 	int n_nuts   = 0;
 	int n_screws = 0;
@@ -93,15 +98,13 @@ private:
 	std::vector<int> screw_sites;
 	std::vector<int> nut_sites;
 
-	std::vector<std::vector<int>> nut_joints;
-	std::vector<std::vector<double>> nut_joint_offsets;
-	std::vector<int> screw_joints;
+	std::vector<double> nut_joint_offsets;
 	std::vector<double> screw_joint_offsets;
-	std::vector<int> screw_joint_constraints;
 	std::vector<int> screw_body_constraints;
 
 	void initCollisionFunction();
 	void parseBodies();
+	void parseROSParam();
 	bool handleScrewing(const mjModel *m, const mjData *d, int nidx, int sidx);
 };
 
