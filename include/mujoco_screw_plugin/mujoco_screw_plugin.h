@@ -55,7 +55,7 @@ const std::string PREFIX = "screw_plugin::";
 class MujocoScrewPlugin : public MujocoSim::MujocoPlugin
 {
 public:
-	~MujocoScrewPlugin() = default;
+	~MujocoScrewPlugin();
 
 	// Overlead entry point
 	bool load(mjModelPtr m, mjDataPtr d) override;

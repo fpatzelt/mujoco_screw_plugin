@@ -99,6 +99,21 @@ bool MujocoScrewPlugin::load(mjModelPtr m, mjDataPtr d)
 	return true;
 }
 
+MujocoScrewPlugin::~MujocoScrewPlugin()
+{
+	ROS_DEBUG_STREAM_NAMED("mujoco_screw_plugin", "Shutting down mujoco_screw plugin ...");
+	instance_map.erase(d_.get());
+	if (instance_map.empty()) {
+		for (int i = 0; i < mjNGEOMTYPES; ++i) {
+			for (int j = 0; j < mjNGEOMTYPES; ++j) {
+				if (mjCOLLISIONFUNC[i][j] == collision_cb_wrapper) {
+					mjCOLLISIONFUNC[i][j] = defaultCollisionFunctions[i][j];
+				}
+			}
+		}
+	}
+}
+
 void MujocoScrewPlugin::parseROSParam()
 {
 	if (rosparam_config_.hasMember("insert_contacts")) {
