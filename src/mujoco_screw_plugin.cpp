@@ -2,7 +2,7 @@
  *
  * Software License Agreement (BSD 3-Clause License)
  *
- *  Copyright (c) 2022, Bielefeld University
+ *  Copyright (c) 2023, Bielefeld University
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 
 #include <pluginlib/class_list_macros.h>
 
-namespace mujoco_screw_plugin {
+namespace mujoco_ros::screw_plugin {
 
 namespace {
 
@@ -242,7 +242,7 @@ void MujocoScrewPlugin::initCollisionFunction()
 	for (int i = 0; i < mjNGEOMTYPES; ++i) {
 		for (int j = 0; j < mjNGEOMTYPES; ++j) {
 			defaultCollisionFunctions[i][j] = mjCOLLISIONFUNC[i][j];
-			registerCollisionFunc(i, j, collision_cb_wrapper);
+			env_ptr_->registerCollisionFunction(i, j, collision_cb_wrapper);
 		}
 	}
 }
@@ -552,5 +552,5 @@ void MujocoScrewPlugin::reset()
 	}
 }
 
-} // namespace mujoco_screw_plugin
-PLUGINLIB_EXPORT_CLASS(mujoco_screw_plugin::MujocoScrewPlugin, MujocoSim::MujocoPlugin)
+} // namespace mujoco_ros::screw_plugin
+PLUGINLIB_EXPORT_CLASS(mujoco_ros::screw_plugin::MujocoScrewPlugin, mujoco_ros::MujocoPlugin)

@@ -1,7 +1,7 @@
 /**
  * Software License Agreement (BSD 3-Clause License)
  *
- *  Copyright (c) 2022, Bielefeld University
+ *  Copyright (c) 2023, Bielefeld University
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -41,18 +41,18 @@
 #include <chrono>
 #include <pluginlib/class_loader.h>
 
-#include <mujoco_ros/mujoco_sim.h>
+#include <mujoco_ros/mujoco_env.h>
 #include <mujoco_ros/plugin_utils.h>
 
 #include <mujoco/mujoco.h>
 
-namespace mujoco_screw_plugin {
+namespace mujoco_ros::screw_plugin {
 
-using namespace MujocoSim;
+using namespace mujoco_ros;
 
 const std::string PREFIX = "screw_plugin::";
 
-class MujocoScrewPlugin : public MujocoSim::MujocoPlugin
+class MujocoScrewPlugin : public mujoco_ros::MujocoPlugin
 {
 public:
 	~MujocoScrewPlugin();
@@ -108,4 +108,4 @@ private:
 	bool handleScrewing(const mjModel *m, const mjData *d, int nidx, int sidx);
 };
 
-} // namespace mujoco_screw_plugin
+} // namespace mujoco_ros::screw_plugin
