@@ -242,7 +242,7 @@ void MujocoScrewPlugin::initCollisionFunction()
 	for (int i = 0; i < mjNGEOMTYPES; ++i) {
 		for (int j = 0; j < mjNGEOMTYPES; ++j) {
 			defaultCollisionFunctions[i][j] = mjCOLLISIONFUNC[i][j];
-			registerCollisionFunc(i, j, collision_cb_wrapper);
+			env_ptr_->registerCollisionFunction(i, j, collision_cb_wrapper);
 		}
 	}
 }
@@ -553,4 +553,4 @@ void MujocoScrewPlugin::reset()
 }
 
 } // namespace mujoco_screw_plugin
-PLUGINLIB_EXPORT_CLASS(mujoco_screw_plugin::MujocoScrewPlugin, MujocoSim::MujocoPlugin)
+PLUGINLIB_EXPORT_CLASS(mujoco_screw_plugin::MujocoScrewPlugin, mujoco_ros::MujocoPlugin)
