@@ -58,9 +58,9 @@ public:
 	~MujocoScrewPlugin();
 
 	// Overlead entry point
-	bool load(mjModelPtr m, mjDataPtr d) override;
+	bool load(const mjModel *m, mjData *d) override;
 
-	void passiveCallback(mjModelPtr model, mjDataPtr data) override;
+	void passiveCallback(const mjModel *model, mjData *data) override;
 
 	// Called on reset
 	void reset() override;
@@ -72,8 +72,8 @@ public:
 
 protected:
 	// Mujoco model and data pointers
-	mjModelPtr m_;
-	mjDataPtr d_;
+	const mjModel *m_;
+	mjData *d_;
 
 private:
 	bool insert_contacts = false;

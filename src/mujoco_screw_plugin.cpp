@@ -83,12 +83,12 @@ double constrainAngle(double x)
 
 } // namespace
 
-bool MujocoScrewPlugin::load(mjModelPtr m, mjDataPtr d)
+bool MujocoScrewPlugin::load(const mjModel *m, mjData *d)
 {
 	ROS_INFO_NAMED("mujoco_screw_plugin", "Loading mujoco_screw_plugin ...");
 	d_                    = d;
 	m_                    = m;
-	instance_map[d.get()] = this;
+	instance_map[d] = this;
 	if (instance_map.size() == 1) {
 		initCollisionFunction();
 	}
@@ -102,7 +102,7 @@ bool MujocoScrewPlugin::load(mjModelPtr m, mjDataPtr d)
 MujocoScrewPlugin::~MujocoScrewPlugin()
 {
 	ROS_DEBUG_STREAM_NAMED("mujoco_screw_plugin", "Shutting down mujoco_screw plugin ...");
-	instance_map.erase(d_.get());
+	instance_map.erase(d_);
 	if (instance_map.empty()) {
 		for (int i = 0; i < mjNGEOMTYPES; ++i) {
 			for (int j = 0; j < mjNGEOMTYPES; ++j) {
@@ -145,7 +145,7 @@ void MujocoScrewPlugin::parseBodies()
 				int site_id = -1;
 				for (int k = 0; k < m_->nsite; ++k) {
 					if (m_->site_bodyid[k] == i &&
-					    std::string(mj_id2name(m_.get(), mjOBJ_SITE, k)).find("tip") != std::string::npos) {
+					    std::string(mj_id2name(const_cast<mjModel *>(m_), mjOBJ_SITE, k)).find("tip") != std::string::npos) {
 						site_id = k;
 					}
 				}
@@ -186,7 +186,7 @@ void MujocoScrewPlugin::parseBodies()
 				int site_id = -1;
 				for (int k = 0; k < m_->nsite; ++k) {
 					if (m_->site_bodyid[k] == i &&
-					    std::string(mj_id2name(m_.get(), mjOBJ_SITE, k)).find("peg") != std::string::npos) {
+					    std::string(mj_id2name(const_cast<mjModel *>(m_), mjOBJ_SITE, k)).find("peg") != std::string::npos) {
 						site_id = k;
 					}
 				}
@@ -459,7 +459,7 @@ static void getimpedance(const mjtNum *solimp, mjtNum pos, mjtNum margin, mjtNum
 	*impP = yP * sgn * (solimp[1] - solimp[0]) / solimp[2];
 }
 
-void MujocoScrewPlugin::passiveCallback(mjModelPtr m, mjDataPtr d)
+void MujocoScrewPlugin::passiveCallback(const mjModel *m, mjData *d)
 {
 	int dim, nefc = d->nefc;
 	mjtNum *R = d->efc_R, *KBIP = d->efc_KBIP;
@@ -482,7 +482,7 @@ void MujocoScrewPlugin::passiveCallback(mjModelPtr m, mjDataPtr d)
 					// screw
 					double scale = m->body_user[m->nuser_body * screw_ids[sidx] + 3] + 10 * lock_scales[nidx][sidx];
 					int j        = i + 5;
-					if (!mj_isSparse(m.get())) {
+					if (!mj_isSparse(m)) {
 						mju_scl(d->efc_J + j * m->nv, d->efc_J + j * m->nv, scale, m->nv);
 					} else {
 						mju_scl(d->efc_J + d->efc_J_rowadr[j], d->efc_J + d->efc_J_rowadr[j], scale, m->nv);
@@ -530,7 +530,7 @@ void MujocoScrewPlugin::passiveCallback(mjModelPtr m, mjDataPtr d)
 					KBIP[4 * j + 3]      = impP;
 					d->efc_D[j]          = 1 / R[j];
 					d->efc_diagApprox[j] = R[j] * KBIP[4 * j + 2] / (1 - KBIP[4 * j + 2]);
-					mj_projectConstraint(m.get(), d.get());
+					mj_projectConstraint(m, d);
 				}
 			}
 		}
